@@ -18,7 +18,13 @@ public class Main {
 		message.setTimestamp(System.currentTimeMillis());
 		message.setMessage("Hello World!!!!!");
 		message.setMessageId(DigestUtils.sha256Hex(Double.toString(Math.random())));
-		System.out.println(message.toHexString(sender_client_device.getPrivateKey()));
+		
+		byte mes_ser[] = message.toBytes(sender_client_device.getPrivateKey());
+		
+		OisemsMessage message2 = new OisemsMessage();
+		message2.fromBytes(mes_ser);
+		
+		//System.out.println(message.toHexString(sender_client_device.getPrivateKey()));
 	}
 	
 }

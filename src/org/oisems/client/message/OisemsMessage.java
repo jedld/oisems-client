@@ -28,6 +28,7 @@ public class OisemsMessage {
 	String recipient;
 	String message;
 	String messageId;
+	int part;
 	long timestamp;
 
 	public String getSender() {
@@ -81,23 +82,17 @@ public class OisemsMessage {
 			MessageDigest md = MessageDigest.getInstance("MD5");
 			byte[] salt = md.digest(Double.toString(Math.random()).getBytes());
 
-			ByteBuffer buffer = ByteBuffer.allocate(MAX_SIZE - 261);
-			ByteBuffer finalbuffer = ByteBuffer.allocate(MAX_SIZE - 261);
+			ByteBuffer buffer = ByteBuffer.allocate(64 *20);
+			ByteBuffer finalbuffer = ByteBuffer.allocate(64 * 20);
 			buffer.put(header);
 			buffer.put(salt);
 			buffer.put(message.getBytes(Charset.forName("UTF-8")));
-			// divide in 64 byte chunks
+			// divide in 64 byte chunk 
 			byte[] arr = buffer.array();
-			for (int i = 0; i < arr.length; i += 64) {
+			for (int i = 0; i + 64 < arr.length; i += 64) {
 				byte chunk[] = new byte[64];
 				System.out.println(i + " -> " + (arr.length - i));
-				if (arr.length - i < 64) {
-					System.out.println("warning!!");
-					chunk = new byte[arr.length - i ];
-					buffer.get(chunk);
-				} else {
-					buffer.get(chunk);
-				}
+				buffer.get(chunk);
 				finalbuffer.put(cipher.doFinal(chunk));
 			}
 			return finalbuffer.array();
@@ -123,13 +118,66 @@ public class OisemsMessage {
 		return null;
 	}
 
+	public void fromBytes(byte message[], String privateKey) {
+		ByteBuffer buffer = ByteBuffer.wrap(message);
+		int version = buffer.get();
+		System.out.println("OISEMS version " + version);
+		byte senderPublicKey[] = new byte[94];
+		byte recipientPublicKey[] = new byte[94];
+		byte messageId[] = new byte[64];
+		byte ds[] = new byte[64];
+		byte raw_message[] = new byte[64*20];
+		buffer.get(senderPublicKey);
+		buffer.get(recipientPublicKey);
+		buffer.get(messageId);
+		long timestamp = buffer.getLong();
+		part = buffer.getInt();
+		buffer.get(ds);
+		buffer.get(raw_message);
+		//verify DS
+		try {
+			Signature sig = Signature.getInstance("MD5WithRSA");
+			PublicKey senderIdentity  = KeyFactory.getInstance("RSA").generatePublic(
+					new X509EncodedKeySpec(senderPublicKey)); 
+			sig.initVerify(senderIdentity);
+			sig.update(raw_message);
+			if (sig.verify(ds)) {
+				System.out.println("Sender identity verified");
+			} else {
+				System.out.println("Sender identity mismatch");
+			}
+			
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
 	public byte[] toBytes(String privateKey) {
 		ByteBuffer buffer = ByteBuffer.allocate(MAX_SIZE);
+		System.out.println("start " + buffer.position());
 		buffer.put((byte) 1);
+		System.out.println("sender " + buffer.position());
 		buffer.put(Base64.decodeBase64(sender));
+		System.out.println("recipient " + buffer.position());
 		buffer.put(Base64.decodeBase64(recipient));
+		System.out.println("message ID " + buffer.position());
 		buffer.put(OisemsMessage.stringToBytesASCII(messageId));
+		System.out.println("timestamp " + buffer.position());
 		buffer.putLong(timestamp);
+		System.out.println("part " + buffer.position());
+		buffer.putInt(part);
+		System.out.println("ds " + buffer.position());
 		try {
 			Signature sig;
 			sig = Signature.getInstance("MD5WithRSA");
@@ -140,8 +188,10 @@ public class OisemsMessage {
 			sig.initSign(privKey);
 			byte[] payload = getMessagePayload();
 			sig.update(payload);
+			System.out.println("sig position = " + buffer.position());
 			buffer.put(sig.sign());
-			System.out.println("position = " + buffer.position());
+			System.out.println("sig position = " + buffer.position());
+			buffer.put(payload);
 			return buffer.array();
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
