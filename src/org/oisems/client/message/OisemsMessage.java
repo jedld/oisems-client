@@ -21,6 +21,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import org.apache.commons.codec.binary.Base64;
+import org.oisems.client.exception.MessageSenderNotVerifiedException;
 
 public class OisemsMessage {
 	public static final int MAX_SIZE = 2953;
@@ -177,7 +178,7 @@ public class OisemsMessage {
 		return toReturn;
 	}
 
-	public void fromBytes(byte message[], String privateKey) {
+	public void fromBytes(byte message[], String privateKey) throws MessageSenderNotVerifiedException {
 		ByteBuffer buffer = ByteBuffer.wrap(message);
 		int version = buffer.get();
 		System.out.println("OISEMS version " + version);
@@ -187,9 +188,16 @@ public class OisemsMessage {
 		byte ds[] = new byte[128];
 		
 		buffer.get(senderPublicKey);
+		setSender(Base64.encodeBase64String(senderPublicKey));
 		buffer.get(recipientPublicKey);
+		setRecipient(Base64.encodeBase64String(recipientPublicKey));
+		
 		buffer.get(messageId);
+		setMessageId(new String(messageId, Charset.forName("UTF-8")));
+		
 		long timestamp = buffer.getLong();
+		setTimestamp(timestamp);
+		
 		part = buffer.getInt();
 		buffer.get(ds);
 		int raw_message_length = buffer.getInt();
@@ -202,10 +210,8 @@ public class OisemsMessage {
 					.generatePublic(new X509EncodedKeySpec(senderPublicKey));
 			sig.initVerify(senderIdentity);
 			sig.update(raw_message);
-			if (sig.verify(ds)) {
-				System.out.println("Sender identity verified");
-			} else {
-				System.out.println("Sender identity mismatch");
+			if (!sig.verify(ds)) {
+				throw new MessageSenderNotVerifiedException();
 			}
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
@@ -271,19 +277,19 @@ public class OisemsMessage {
 
 	public byte[] toBytes(String privateKey) {
 		ByteBuffer buffer = ByteBuffer.allocate(MAX_SIZE);
-		System.out.println("start " + buffer.position());
+		//System.out.println("start " + buffer.position());
 		buffer.put((byte) 1);
-		System.out.println("sender " + buffer.position());
+		//System.out.println("sender " + buffer.position());
 		buffer.put(Base64.decodeBase64(sender));
-		System.out.println("recipient " + buffer.position());
+		//System.out.println("recipient " + buffer.position());
 		buffer.put(Base64.decodeBase64(recipient));
-		System.out.println("message ID " + buffer.position());
+		//System.out.println("message ID " + buffer.position());
 		buffer.put(OisemsMessage.stringToBytesASCII(messageId));
-		System.out.println("timestamp " + buffer.position());
+		//System.out.println("timestamp " + buffer.position());
 		buffer.putLong(timestamp);
-		System.out.println("part " + buffer.position());
+		//System.out.println("part " + buffer.position());
 		buffer.putInt(part);
-		System.out.println("ds " + buffer.position());
+		//System.out.println("ds " + buffer.position());
 		try {
 			Signature sig;
 			sig = Signature.getInstance("MD5WithRSA");
@@ -296,10 +302,11 @@ public class OisemsMessage {
 			sig.update(payload);
 			System.out.println("sig position = " + buffer.position());
 			buffer.put(sig.sign());
-			System.out.println("sig position = " + buffer.position());
+			System.out.println("payload length " + buffer.position());
 			buffer.putInt(payload.length);
+			System.out.println("payload start " + buffer.position());
 			buffer.put(payload);
-			System.out.println("end position = " + buffer.position());
+			System.out.println("end = " + buffer.position());
 			return buffer.array();
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block

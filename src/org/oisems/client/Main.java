@@ -1,6 +1,7 @@
 package org.oisems.client;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.oisems.client.exception.MessageSenderNotVerifiedException;
 import org.oisems.client.message.OisemsMessage;
 
 public class Main {
@@ -21,7 +22,11 @@ public class Main {
 		byte mes_ser[] = message.toBytes(sender_client_device.getPrivateKey());
 		
 		OisemsMessage message2 = new OisemsMessage();
-		message2.fromBytes(mes_ser, recipient_client_device.getPrivateKey());
+		try {
+			message2.fromBytes(mes_ser, recipient_client_device.getPrivateKey());
+		} catch (MessageSenderNotVerifiedException e) {
+			System.out.println("Message Sender not verified");
+		}
 		System.out.println("decoded message = " + message2.getMessage());
 	}
 	
