@@ -75,7 +75,7 @@ public class OisemsMessage {
 		try {
 			PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(
 					new X509EncodedKeySpec(Base64.decodeBase64(recipient)));
-			Cipher cipher = Cipher.getInstance("RSA/ECB/NoPadding");
+			Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
 			byte[] header = stringToBytesASCII("OISEMS");
@@ -87,14 +87,8 @@ public class OisemsMessage {
 			buffer.put(header);
 			buffer.put(salt);
 			buffer.put(message.getBytes(Charset.forName("UTF-8")));
-			// divide in 64 byte chunk 
-			byte[] arr = buffer.array();
-			for (int i = 0; i + 64 < arr.length; i += 64) {
-				byte chunk[] = new byte[64];
-				System.out.println(i + " -> " + (arr.length - i));
-				buffer.get(chunk);
-				finalbuffer.put(cipher.doFinal(chunk));
-			}
+			finalbuffer.put(cipher.doFinal(buffer.array()));
+			
 			return finalbuffer.array();
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block

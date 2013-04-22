@@ -12,7 +12,7 @@ public class Utils {
 		KeyPairGenerator keyGen;
 		try {
 			keyGen = KeyPairGenerator.getInstance("RSA");
-	        keyGen.initialize(512);
+	        keyGen.initialize(1024);
 	        KeyPair keypair = keyGen.genKeyPair();
 	        String publicKey = Base64.encodeBase64String(keypair.getPublic().getEncoded());
 	        String privateKey = Base64.encodeBase64String(keypair.getPrivate().getEncoded());

@@ -22,7 +22,7 @@ public class Main {
 		byte mes_ser[] = message.toBytes(sender_client_device.getPrivateKey());
 		
 		OisemsMessage message2 = new OisemsMessage();
-		message2.fromBytes(mes_ser);
+		message2.fromBytes(mes_ser, recipient_client_device.getPrivateKey());
 		
 		//System.out.println(message.toHexString(sender_client_device.getPrivateKey()));
 	}
