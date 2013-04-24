@@ -21,6 +21,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.oisems.client.exception.MessageSenderNotVerifiedException;
 
 public class OisemsMessage {
@@ -32,6 +33,10 @@ public class OisemsMessage {
 	int part;
 	long timestamp;
 
+	public OisemsMessage() {
+		messageId = DigestUtils.sha256Hex(Double.toString(Math.random()));
+	}
+	
 	public String getSender() {
 		return sender;
 	}
@@ -115,7 +120,7 @@ public class OisemsMessage {
 		return null;
 	}
 
-	private byte[] blockCipher(Cipher cipher, byte[] bytes, int mode)
+	public static byte[] blockCipher(Cipher cipher, byte[] bytes, int mode)
 			throws IllegalBlockSizeException, BadPaddingException {
 		// string initialize 2 buffers.
 		// scrambled will hold intermediate results
@@ -167,7 +172,7 @@ public class OisemsMessage {
 		return toReturn;
 	}
 
-	private byte[] append(byte[] prefix, byte[] suffix) {
+	public static byte[] append(byte[] prefix, byte[] suffix) {
 		byte[] toReturn = new byte[prefix.length + suffix.length];
 		for (int i = 0; i < prefix.length; i++) {
 			toReturn[i] = prefix[i];

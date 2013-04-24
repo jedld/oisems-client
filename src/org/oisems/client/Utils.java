@@ -3,6 +3,7 @@ package org.oisems.client;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -27,5 +28,35 @@ public class Utils {
 		}
 		return null;
 	}
+	
+	public static String escapeJSON(String str) {
+		return "\""
+				+ str.replace("\\", "\\\\").replace("\"", "\\\"")
+						.replace("\n", "\\n").replace("\r", "\\r")
+						.replace("\t", "\\t") + "\"";
+	}
+
+	public static String mapToJSON(Map<String, String> resultMap) {
+		StringBuilder jsonString = new StringBuilder();
+		jsonString.append("{");
+		boolean first = true;
+		for (String key : resultMap.keySet()) {
+			if (!first) {
+				jsonString.append(",");
+			} else {
+				first = false;
+			}
+			String value = resultMap.get(key);
+			if (value == null) {
+				jsonString.append("null");
+			} else {
+				jsonString.append(escapeJSON(key) + ":" + escapeJSON(value));
+			}
+		}
+		jsonString.append("}");
+		return jsonString.toString();
+	}
+
+	
 	
 }
