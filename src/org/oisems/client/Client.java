@@ -27,6 +27,7 @@ import com.google.gson.JsonParser;
 public class Client extends WebSocketClient {
 	
 	OisemsClientDevice device;
+	OnNewSessionListener listener;
 	String session_id;
 	
 	public Client(OisemsClientDevice device, URI serverURI) {
@@ -58,6 +59,9 @@ public class Client extends WebSocketClient {
 				String unencryted_session_id = decrypt(raw_session, device.getPrivateKey());
 				System.out.println("session_id = " + unencryted_session_id);
 				this.session_id = unencryted_session_id;
+				if (listener!=null) {
+					listener.onSession(session_id);
+				}
 			} catch (InvalidKeyException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -80,6 +84,14 @@ public class Client extends WebSocketClient {
 		}
 		
 		
+	}
+
+	public OnNewSessionListener getListener() {
+		return listener;
+	}
+
+	public void setListener(OnNewSessionListener listener) {
+		this.listener = listener;
 	}
 
 	private String decrypt(byte []raw_message, String privateKey) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {

@@ -12,23 +12,27 @@ public class Main {
 		System.out.println("device public key = " + sender_client_device.getPublicKey());
 		System.out.println("device private key = " + recipient_client_device.getPublicKey());
 		
-		OisemsMessage message = new OisemsMessage();
+		final OisemsMessage message = new OisemsMessage();
 		message.setSender(sender_client_device.getPublicKey());
 		message.setRecipient(recipient_client_device.getPublicKey());
 		message.setTimestamp(System.currentTimeMillis());
 		message.setMessage("This is something else Hello World!!!!!. Yes it is");
-		
-		
-		byte mes_ser[] = message.toBytes(sender_client_device.getPrivateKey());
-		
-		OisemsMessage message2 = new OisemsMessage();
-		try {
-			message2.fromBytes(mes_ser, recipient_client_device.getPrivateKey());
-		} catch (MessageSenderNotVerifiedException e) {
-			System.out.println("Message Sender not verified");
+		sender_client_device.start(new OnClientReadyListener() {
+
+			@Override
+			public void onReady(OisemsClientDevice oisemsClientDevice) {
+				oisemsClientDevice.sendMessage(message);
+			}
+			
+		});
+		while(true) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		System.out.println("decoded message = " + message2.getMessage());
-		sender_client_device.start();
 	}
 	
 }

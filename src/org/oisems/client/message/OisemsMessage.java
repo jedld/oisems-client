@@ -183,6 +183,27 @@ public class OisemsMessage {
 		return toReturn;
 	}
 
+	public void fromBytesPartial(byte message[]) {
+		ByteBuffer buffer = ByteBuffer.wrap(message);
+		int version = buffer.get();
+		System.out.println("OISEMS version " + version);
+		byte senderPublicKey[] = new byte[162];
+		byte recipientPublicKey[] = new byte[162];
+		byte messageId[] = new byte[64];
+		byte ds[] = new byte[128];
+		
+		buffer.get(senderPublicKey);
+		setSender(Base64.encodeBase64String(senderPublicKey));
+		buffer.get(recipientPublicKey);
+		setRecipient(Base64.encodeBase64String(recipientPublicKey));
+		
+		buffer.get(messageId);
+		setMessageId(new String(messageId, Charset.forName("UTF-8")));
+		
+		long timestamp = buffer.getLong();
+		setTimestamp(timestamp);
+	}
+	
 	public void fromBytes(byte message[], String privateKey) throws MessageSenderNotVerifiedException {
 		ByteBuffer buffer = ByteBuffer.wrap(message);
 		int version = buffer.get();
